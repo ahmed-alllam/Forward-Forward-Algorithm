@@ -16,7 +16,10 @@ class Model(torch.nn.Module):
 
     def train(self, x, is_positive, optimizer):        
         out = self.layer1(x)
-        loss = torch.sum(out ** 2) - self.threshold if is_positive else self.threshold - torch.sum(out ** 2)
+        loss = torch.sum(out ** 2) - self.threshold
+
+        if not is_positive:
+            loss = -loss
         
         optimizer.zero_grad()
         loss.backward()
@@ -25,7 +28,10 @@ class Model(torch.nn.Module):
         optimizer.zero_grad()
 
         out = self.layer2(out)
-        loss = torch.sum(out ** 2) - self.threshold if is_positive else self.threshold - torch.sum(out ** 2)
+        loss = torch.sum(out ** 2) - self.threshold
+ 
+        if not is_positive:
+            loss = -loss
 
         optimizer.zero_grad()
         loss.backward()
