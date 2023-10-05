@@ -7,6 +7,10 @@ import tqdm
 
 from model import Model
 
+def seed_everything(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
 def load_data():
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -33,16 +37,17 @@ def encode_label_in_image(x, y):
 
     return x
 
-def train(model, train_loader, optimizer, num_epochs):
+def train(model, train_loader, optimizer, device, num_epochs):
     for epoch in tqdm.tqdm(range(num_epochs)):
         for x, y in train_loader:
+            x, y = x.to(device), y.to(device)
             x = encode_label_in_image(x.view(-1, 784), y)
             loss = model.train(x, True, optimizer)
 
             x = encode_label_in_image(x.view(-1, 784), create_negative_data())
             loss += model.train(x, False, optimizer)
         
-        print("Epoch {} Finished, Train Accuracy: {}".format(epoch, test(model, train_loader)))
+        print("Epoch {} Finished, Train Accuracy: {}".format(epoch, test(model, train_loader, device)))
 
 def predict(model, x):
     goodness_for_label = []
@@ -54,12 +59,13 @@ def predict(model, x):
     
     return torch.stack(goodness_for_label, 1).argmax(1)
 
-def test(model, test_loader):
+def test(model, test_loader, device):
     correct = 0
     total = 0
 
     with torch.no_grad():
         for x, y in test_loader:
+            x, y = x.to(device), y.to(device)
             pred = predict(model, x)
             correct += (pred == y).sum().item()
             total += y.size(0)
@@ -67,11 +73,14 @@ def test(model, test_loader):
     return correct / total
 
 def main():
+    seed_everything(2003)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     train_loader, test_loader = load_data()
     model = Model(784, 500, 2)
+    model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.03)
-    train(model, train_loader, optimizer, 1000)
-    print("Test Accuracy: {}".format(test(model, test_loader)))
+    train(model, train_loader, optimizer, device, 1000)
+    print("Test Accuracy: {}".format(test(model, test_loader, device)))
 
 if __name__ == '__main__':
     main()
