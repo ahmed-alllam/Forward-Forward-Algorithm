@@ -25,9 +25,9 @@ class Model(torch.nn.Module):
         loss.backward()
         optimizer.step()
 
-        optimizer.zero_grad()
+        print("Loss after layer 1: {}".format(loss.item()))
 
-        out = self.layer2(out)
+        out = self.layer2(out.detach())
         loss = torch.sum(out ** 2) - self.threshold
  
         if not is_positive:
@@ -36,5 +36,7 @@ class Model(torch.nn.Module):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        print("Loss after layer 2: {}".format(loss.item()))
 
         return loss
