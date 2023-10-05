@@ -7,36 +7,33 @@ class Model(torch.nn.Module):
         self.layer2 = torch.nn.Linear(hidden_size, hidden_size)
         self.relu = torch.nn.ReLU()
         self.threshold = threshold
+
+        self.layers = [self.layer1, self.layer2]
     
     def forward(self, x):
-        out = self.layer1(x)
-        out = self.relu(out)
-        out = self.layer2(out)
-        return out
+        goodness = []
+
+        out = x
+        for layer in self.layers:
+            out = layer(out)
+            out = self.relu(out)
+            goodness += [out.pow(2).mean(1)]
+
+        return torch.stack(goodness, 1).sum(1), out
 
     def train(self, x, is_positive, optimizer):        
-        out = self.layer1(x)
-        loss = torch.sum(out ** 2) - self.threshold
+        out = x
 
-        if not is_positive:
-            loss = -loss
-        
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        for layer in self.layers:
+            out = layer(out.detach())
+            out = self.relu(out)
 
-        print("Loss after layer 1: {}".format(loss.item()))
-
-        out = self.layer2(out.detach())
-        loss = torch.sum(out ** 2) - self.threshold
- 
-        if not is_positive:
-            loss = -loss
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        print("Loss after layer 2: {}".format(loss.item()))
+            loss = out.pow(2).mean(1) - self.threshold
+            loss = -loss if is_positive else loss
+            loss = torch.log(1 + torch.exp(loss)).mean()
+            
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
         return loss
