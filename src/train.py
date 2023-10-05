@@ -46,8 +46,6 @@ def train(model, train_loader, optimizer, device, num_epochs):
 
             x = encode_label_in_image(x.view(-1, 784), create_negative_data())
             loss += model.train(x, False, optimizer)
-        
-        print("Epoch {} Finished, Train Accuracy: {}".format(epoch, test(model, train_loader, device)))
 
 def predict(model, x):
     goodness_for_label = []
@@ -76,10 +74,10 @@ def main():
     seed_everything(2003)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     train_loader, test_loader = load_data()
-    model = Model(784, 500, 2)
+    model = Model(784, 128, 2)
     model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.03)
-    train(model, train_loader, optimizer, device, 1000)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.03)
+    train(model, train_loader, optimizer, device, 100)
     print("Test Accuracy: {}".format(test(model, test_loader, device)))
 
 if __name__ == '__main__':
