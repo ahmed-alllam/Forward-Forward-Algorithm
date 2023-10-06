@@ -74,9 +74,9 @@ def main():
     seed_everything(2003)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     train_loader, test_loader = load_data()
-    model = Model(784, 128, 2)
+    model = Model(784, 512, 2)
     model.to(device)
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.03)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     train(model, train_loader, optimizer, device, 100)
     print("Test Accuracy: {}".format(test(model, test_loader, device)))
 
